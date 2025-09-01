@@ -1,0 +1,28 @@
+mpc_controller_node:
+  ros__parameters:
+    control_rate_hz: 10.0
+    con.t_delta: 0.1
+    con.n_hor: 20
+    con.arg_bnd: 1000.0
+    con.Q_err_trn_x: 100.0
+    con.Q_err_trn_y: 100.0
+    con.Q_err_ang: 1000.0
+    con.Q_hdg: 2000.0
+    con.Q_con: 1e-6
+    con.Q_chg: 1e-1
+    sys.n_rbt: 4
+    sys.cart_hgt: 1.03
+    sys.cart_wdt: 2.04
+    sys.robo_sze: 0.30
+    sys.robo_dst: 0.50
+    sys.robo_rdi: 0.10
+    sys.r_BtoR: [1.02, -0.30, 1.02, 0.20, 0.20, -0.515, -0.60, -0.515]
+    sys.u_lower: -20.0
+    sys.u_upper: 20.0
+    acados.code_export_dir: "/tmp/acados_mpc_cart_multi4"
+    frame.map: "odom"
+    frame.cart: "base_link"
+    frame.cart_parent: "world"
+    frame.robot_parent: "odom"
+    frame.robot_prefix: "robot"
+    frame.robot_suffix: "_base_2"
