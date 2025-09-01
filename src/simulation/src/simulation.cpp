@@ -5,6 +5,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -35,8 +36,6 @@ public:
     this->declare_parameter<std::string>("frame.robot_prefix", "robot");
     this->declare_parameter<std::string>("frame.robot_suffix", "_base_2");
 
-    // Anchor distance from M to B in body x-axis (for pseudo center M)
-    this->declare_parameter<double>("sim.M_to_B_body_x", 1.0);
 
     dt_ = this->get_parameter("dt").as_double();
     robo_rdi_ = this->get_parameter("sys.robo_rdi").as_double();
@@ -61,21 +60,12 @@ public:
     frame_cart_ = this->get_parameter("frame.cart").as_string();
     frame_robot_prefix_ = this->get_parameter("frame.robot_prefix").as_string();
     frame_robot_suffix_ = this->get_parameter("frame.robot_suffix").as_string();
-    M_to_B_body_x_ = this->get_parameter("sim.M_to_B_body_x").as_double();
 
-    // Subscribers for cmd_vel
-    cmd_vels_.resize(n_rbt_);
-    for (int i = 0; i < n_rbt_; ++i) {
-      auto topic = std::string("/multirobot/") + frame_robot_prefix_ + std::to_string(i+1) + "/cmd_vel";
-      subs_.push_back(this->create_subscription<geometry_msgs::msg::Twist>(
-        topic, 10,
-        [this, i](geometry_msgs::msg::Twist::SharedPtr msg){
-          cmd_vels_[i] = *msg;
-          has_cmd_[i] = true;
-        }
-      ));
-    }
-    has_cmd_.assign(n_rbt_, false);
+    // Subscriber for pseudo input Up = [xM,yM,omM,omR1..omR4]
+    sub_up_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+      "/mpc/pseudo_input", 10,
+      [this](std_msgs::msg::Float64MultiArray::SharedPtr msg){ up_ = *msg; has_up_ = true; }
+    );
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);
 
@@ -84,42 +74,27 @@ public:
 
 private:
   void on_tick() {
-    // 1) Convert cmd_vel to wheel speeds and robot angular rates
+    if (!has_up_) {
+      // publish current TFs so that controller can start
+      publish_cart_tf();
+      publish_robot_tfs();
+      return;
+    }
+    // Parse Up
+    if (up_.data.size() < 7) return;
+    const double xM = up_.data[0];
+    const double yM = up_.data[1];
+    const double omM = up_.data[2];
     std::vector<double> omR(n_rbt_, 0.0);
-    std::vector<double> vR_norm(n_rbt_, 0.0);
-    // wheel angular speeds (rad/s)
-    std::vector<double> uL(n_rbt_, 0.0);
-    std::vector<double> uR(n_rbt_, 0.0);
-    for (int i = 0; i < n_rbt_; ++i) {
-      const auto &tw = cmd_vels_[i];
-      const double v = tw.linear.x;          // m/s
-      const double wz = tw.angular.z;        // rad/s (robot heading rate)
-      vR_norm[i] = v;
-      omR[i] = wz;
-      // differential drive mapping: ul = (v - 0.5*d*wz)/r, ur = (v + 0.5*d*wz)/r
-      uL[i] = (v - 0.5 * robo_dst_ * wz) / robo_rdi_;
-      uR[i] = (v + 0.5 * robo_dst_ * wz) / robo_rdi_;
+    for (int i = 0; i < std::min(n_rbt_, (int)up_.data.size() - 3); ++i) {
+      omR[i] = up_.data[3 + i];
     }
 
     // 2) Choose pseudo center M relative to cart (body x-axis offset)
     const double c = std::cos(thB_);
     const double s = std::sin(thB_);
-    const double xM = xB_ - M_to_B_body_x_ * c;
-    const double yM = yB_ - M_to_B_body_x_ * s;
 
-    // 3) Compute omM from vR_norm and geometry: vR = |omM| * ||r_MtoR|| -> omM = mean(vR / ||r_MtoR||)
-    double omM_acc = 0.0;
-    int omM_cnt = 0;
-    for (int i = 0; i < n_rbt_; ++i) {
-      const double rx = (xB_ - xM) + c * r_BtoR_[i].first - s * r_BtoR_[i].second;
-      const double ry = (yB_ - yM) + s * r_BtoR_[i].first + c * r_BtoR_[i].second;
-      const double rnorm = std::hypot(rx, ry);
-      if (rnorm > 1e-9) {
-        omM_acc += vR_norm[i] / rnorm;
-        ++omM_cnt;
-      }
-    }
-    const double omM = (omM_cnt > 0) ? (omM_acc / omM_cnt) : 0.0;
+    // omM, xM, yM are from Up directly (MATLAB-consistent)
 
     // 4) Dynamics (same as controller model)
     const double rMx = xB_ - xM;
@@ -132,9 +107,7 @@ private:
     xB_ += dt_ * vBx;
     yB_ += dt_ * vBy;
     thB_ += dt_ * thB_dot;
-    for (int i = 0; i < n_rbt_; ++i) {
-      thR_[i] += dt_ * omR[i];
-    }
+    for (int i = 0; i < n_rbt_; ++i) thR_[i] += dt_ * omR[i];
 
     // 6) Publish TFs
     publish_cart_tf();
@@ -198,12 +171,12 @@ private:
   std::string frame_cart_;
   std::string frame_robot_prefix_;
   std::string frame_robot_suffix_;
-  double M_to_B_body_x_{};
+  // removed: pseudo center offset parameter
 
   // I/O
-  std::vector<geometry_msgs::msg::Twist> cmd_vels_;
-  std::vector<bool> has_cmd_;
-  std::vector<rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr> subs_;
+  std_msgs::msg::Float64MultiArray up_;
+  bool has_up_ = false;
+  rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr sub_up_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   rclcpp::TimerBase::SharedPtr timer_;
 };

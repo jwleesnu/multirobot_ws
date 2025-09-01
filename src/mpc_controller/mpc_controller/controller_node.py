@@ -7,6 +7,7 @@ from typing import Optional, List
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
+from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import Path
 from geometry_msgs.msg import Pose2D
 from geometry_msgs.msg import Twist
@@ -360,6 +361,8 @@ class MPCControllerNode(Node):
         self._pub_ul_dbg = [self.create_publisher(Float64, f'/debug/robot{i+1}/ul', 10) for i in range(4)]
         self._pub_ur_dbg = [self.create_publisher(Float64, f'/debug/robot{i+1}/ur', 10) for i in range(4)]
         self._pub_om_dbg = [self.create_publisher(Float64, f'/debug/robot{i+1}/omega', 10) for i in range(4)]
+        # pseudo input publisher (Up = [xM,yM,omM,omR1..omR4])
+        self._pub_up = self.create_publisher(Float64MultiArray, '/mpc/pseudo_input', 10)
 
         # buffers
         self._xref: Optional[float] = None
@@ -525,6 +528,10 @@ class MPCControllerNode(Node):
         u0 = self._solver.get(0, 'u')  # Up at stage 0
         U_wheels = self._compute_wheels_from_pseudo(self._xB, self._yB, self._thB, self._thR, u0)
         self._publish_cmd_vel_from_wheels(U_wheels)
+        # publish pseudo input
+        up_msg = Float64MultiArray()
+        up_msg.data = [float(val) for val in u0]
+        self._pub_up.publish(up_msg)
 
         # debug publishes: cart pose, reference(k=0), wheels, omegas
         pose_msg = Pose2D()
