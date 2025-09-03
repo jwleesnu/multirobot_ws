@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'controller_node = mpc_controller.controller_node:main',
+            'casadi_controller = mpc_controller.casadi_controller:main',
         ],
     },
 )

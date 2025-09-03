@@ -6,10 +6,12 @@ mpc_controller_node:
     con.arg_bnd: 1000.0
     con.Q_err_trn_x: 100.0
     con.Q_err_trn_y: 100.0
-    con.Q_err_ang: 1000.0
-    con.Q_hdg: 2000.0
-    con.Q_con: 1e-6
-    con.Q_chg: 1e-1
+    con.Q_err_ang: 1000.0 # 1000.0
+    con.Q_hdg: 2000.0 # 2000.0
+    con.Q_con: 2.5e-7
+    con.Q_chg: 2.5e-2
+    con.obstacleBuffer: 0.05
+    con.prmFactor: 0.9
     sys.n_rbt: 4
     sys.cart_hgt: 1.03
     sys.cart_wdt: 2.04
