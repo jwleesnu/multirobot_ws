@@ -36,23 +36,18 @@ private:
 
     nav_msgs::msg::Path path_msg;
     path_msg.header.stamp = this->now();
-    path_msg.header.frame_id = "map";  // adjust frame as needed
+    path_msg.header.frame_id = "odom";  // adjust frame as needed
 
-    // Circle parameters: radius 10 m, constant speed 0.5 m/s
-    const double R = 1.0;
-    const double v = 0.2;
-    const double omega = v / R;               // rad/s
-    const double cx = 0.0;                    // center x
-    const double cy = -1.0;                  // center y
-    const double theta0 = pi / 2.0;           // start at (0,0)
+    // Straight line reference: x = 0.5 * t, y = 1.0, yaw = 0
+    const double vx = 0.5;     // m/s
+    const double y_const = 1.0;
 
     path_msg.poses.reserve(steps);
     for (int k = 0; k < steps; ++k) {
       const double tk = t0 + k * dt;
-      const double theta = theta0 - omega * tk;   // CW rotation
-      const double x = cx + R * std::cos(theta);
-      const double y = cy + R * std::sin(theta);
-      const double yaw = theta - pi / 2.0; 
+      const double x = vx * tk;
+      const double y = y_const;
+      const double yaw = 0.0;
 
       geometry_msgs::msg::PoseStamped ps;
       ps.header.stamp = path_msg.header.stamp;

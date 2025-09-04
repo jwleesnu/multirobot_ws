@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>mpc_controller_cpp</name>
+  <version>0.1.0</version>
+  <description>ROS2 C++ MPC controller node using CasADi/IPOPT converted from casadi_controller.py</description>
+
+  <maintainer email="user@example.com">jaewoo</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <!-- CasADi is brought in via pkg-config at build time -->
+  <exec_depend>pkg-config</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
