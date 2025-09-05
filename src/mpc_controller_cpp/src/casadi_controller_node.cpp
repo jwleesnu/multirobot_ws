@@ -24,6 +24,7 @@
 
 #include <casadi/casadi.hpp>
 
+// Namespace shortcuts
 using std::placeholders::_1;
 using casadi::MX;
 using SX = casadi::MX;
@@ -31,6 +32,7 @@ using casadi::DM;
 using casadi::Function;
 using casadi::Slice;
 namespace ca = casadi;
+
 
 class CasadiMPCControllerNode : public rclcpp::Node {
 public:
