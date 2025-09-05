@@ -3,7 +3,7 @@
 이 워크스페이스는 3개의 ROS 2 패키지로 구성됩니다.
 
 - reference_generator (C++): 기준 궤적 publish
-- mpc_controller (Python, ACADOS): 기준 궤적/TF를 입력받아 로봇 명령 생성
+- mpc_controller_cpp (C++, CasADi/IPOPT): 기준 궤적/TF를 입력받아 로봇 명령 생성
 - simulation (C++): cmd_vel을 받아 연속시간 기구학을 적분해 TF publish
 
 ### 공통 프레임
@@ -29,8 +29,8 @@
 
 ---
 
-## mpc_controller
-ACADOS 기반 MPC로, 기준 궤적(Path)과 TF(cart/robots)를 입력받아 각 로봇의 속도 명령을 publish 합니다.
+## mpc_controller_cpp
+CasADi/IPOPT 기반 MPC로, 기준 궤적(Path)과 TF(cart/robots)를 입력받아 각 로봇의 속도 명령을 publish 합니다.
 
 - 입력
   - `/reference/trajectory` (nav_msgs/Path)
@@ -48,7 +48,9 @@ ACADOS 기반 MPC로, 기준 궤적(Path)과 TF(cart/robots)를 입력받아 각
   - `/mpc/xref`, `/mpc/yref`, `/mpc/thref` (std_msgs/Float64): k=0 참조
   - `/debug/robot{i}/ul`, `/debug/robot{i}/ur` (std_msgs/Float64): 바퀴 속도
   - `/debug/robot{i}/omega` (std_msgs/Float64): Up의 omRi
+  - `/mpc/pseudo_input` (std_msgs/Float64MultiArray): Up(:,0)
 - 주요 파라미터(ros2 param)
+  - `control_rate_hz` (제어 주기, 기본 10 Hz)
   - con: `t_delta`, `n_hor`, `arg_bnd`, `Q_err_trn_x`, `Q_err_trn_y`, `Q_err_ang`, `Q_hdg`, `Q_con`, `Q_chg`
   - sys: `n_rbt`, `cart_hgt`, `cart_wdt`, `robo_sze`, `robo_dst`(바퀴 간격), `robo_rdi`(바퀴 반경), `r_BtoR`(카트→로봇 연결점), `u_lower`, `u_upper`
   - frame: `map`(기본: odom), `cart`(base_link), `cart_parent`(world), `robot_parent`(odom), `robot_prefix`(robot), `robot_suffix`(_base_2)
@@ -56,6 +58,9 @@ ACADOS 기반 MPC로, 기준 궤적(Path)과 TF(cart/robots)를 입력받아 각
   - 상태 x: `[xB, yB, thB, thR1..thR4]`
   - 입력 u(의사입력 Up): `[xM, yM, omM, omR1..omR4]`
   - 일반제약 h(x,u)=U_from_pseudo(x,u)=[uL1,uR1,...,uL4,uR4]
+
+빌드 의존성
+- CasADi: Ubuntu에서는 `libcasadi-dev` 설치 권장. 패키지 탐색이 실패하면 `CASADI_PREFIX`/`CASADI_ROOT`/`CONDA_PREFIX` 환경변수로 경로를 제공하세요.
 
 ---
 
@@ -81,11 +86,10 @@ ACADOS 기반 MPC로, 기준 궤적(Path)과 TF(cart/robots)를 입력받아 각
 1) 환경 소싱
 ```bash
 source /opt/ros/<distro>/setup.bash
-source ~/multirobot_ws/scripts/acados_env.sh   # ACADOS 사용 시
 ```
 2) 빌드
 ```bash
-cd ~/multirobot_ws
+cd /home/jaewoo/ros2_workspace/multirobot_ws
 colcon build
 source install/setup.bash
 ```
@@ -93,7 +97,7 @@ source install/setup.bash
 ```bash
 ros2 run reference_generator simulation_reference
 ros2 run simulation simulation
-ros2 run mpc_controller controller_node
+ros2 run mpc_controller_cpp casadi_controller_node
 ```
 
 ## 시각화/로깅 팁
