@@ -42,10 +42,19 @@ public:
     robo_dst_ = this->get_parameter("sys.robo_dst").as_double();
     n_rbt_ = this->get_parameter("sys.n_rbt").as_int();
     auto rBtoR_flat = this->get_parameter("sys.r_BtoR").as_double_array();
+    // Ensure size matches 2*n_rbt_ (truncate or pad with zeros)
+    std::vector<double> rBtoR_vec(rBtoR_flat.begin(), rBtoR_flat.end());
+    if ((int)rBtoR_vec.size() < 2 * n_rbt_) {
+      RCLCPP_WARN(this->get_logger(), "sys.r_BtoR has %d elements, expected %d. Padding zeros.", (int)rBtoR_vec.size(), 2*n_rbt_);
+      rBtoR_vec.resize(2 * n_rbt_, 0.0);
+    } else if ((int)rBtoR_vec.size() > 2 * n_rbt_) {
+      RCLCPP_WARN(this->get_logger(), "sys.r_BtoR has %d elements, expected %d. Truncating.", (int)rBtoR_vec.size(), 2*n_rbt_);
+      rBtoR_vec.resize(2 * n_rbt_);
+    }
     r_BtoR_.resize(n_rbt_);
     for (int i = 0; i < n_rbt_; ++i) {
-      r_BtoR_[i].first = rBtoR_flat[2*i];
-      r_BtoR_[i].second = rBtoR_flat[2*i+1];
+      r_BtoR_[i].first = rBtoR_vec[2*i];
+      r_BtoR_[i].second = rBtoR_vec[2*i+1];
     }
 
     xB_ = this->get_parameter("init.xB").as_double();
@@ -53,7 +62,13 @@ public:
     thB_ = this->get_parameter("init.thB").as_double();
     auto thR_init = this->get_parameter("init.thR").as_double_array();
     thR_.assign(thR_init.begin(), thR_init.end());
-    if ((int)thR_.size() < n_rbt_) thR_.resize(n_rbt_, 0.0);
+    if ((int)thR_.size() < n_rbt_) {
+      RCLCPP_WARN(this->get_logger(), "init.thR has %d elements, expected %d. Padding zeros.", (int)thR_.size(), n_rbt_);
+      thR_.resize(n_rbt_, 0.0);
+    } else if ((int)thR_.size() > n_rbt_) {
+      RCLCPP_WARN(this->get_logger(), "init.thR has %d elements, expected %d. Truncating.", (int)thR_.size(), n_rbt_);
+      thR_.resize(n_rbt_);
+    }
 
     frame_cart_parent_ = this->get_parameter("frame.cart_parent").as_string();
     frame_robot_parent_ = this->get_parameter("frame.robot_parent").as_string();
@@ -81,7 +96,7 @@ private:
       return;
     }
     // Parse Up
-    if (up_.data.size() < 7) return;
+    if (up_.data.size() < 3) return;
     const double xM = up_.data[0];
     const double yM = up_.data[1];
     const double omM = up_.data[2];
@@ -89,12 +104,6 @@ private:
     for (int i = 0; i < std::min(n_rbt_, (int)up_.data.size() - 3); ++i) {
       omR[i] = up_.data[3 + i];
     }
-
-    // 2) Choose pseudo center M relative to cart (body x-axis offset)
-    const double c = std::cos(thB_);
-    const double s = std::sin(thB_);
-
-    // omM, xM, yM are from Up directly (MATLAB-consistent)
 
     // 4) Dynamics (same as controller model)
     const double rMx = xB_ - xM;

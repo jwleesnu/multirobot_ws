@@ -1,0 +1,17 @@
+kinematics_simulation:
+  ros__parameters:
+    dt: 0.0025
+    sys.robo_rdi: 0.10
+    sys.robo_dst: 0.50
+    sys.n_rbt: 2
+    sys.r_BtoR: [1.02, -0.30, 0.20, -0.515]
+    init.xB: 2.5
+    init.yB: -2.1
+    init.thB: 1.5707963267948966
+    init.thR: [1.5707963267948966, 1.5707963267948966]
+    frame.cart_parent: "world"
+    frame.robot_parent: "world"
+    frame.cart: "object"
+    frame.robot_prefix: "robot_"
+    frame.robot_suffix: ""
+    sim.M_to_B_body_x: 1.0

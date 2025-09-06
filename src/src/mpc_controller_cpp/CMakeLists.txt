@@ -13,6 +13,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+# find_package(OpenCV REQUIRED)
 
 # CasADi via pkg-config
 find_package(PkgConfig QUIET)
@@ -41,7 +42,8 @@ if(NOT CASADI_FOUND)
   set(CASADI_LIBRARIES ${CASADI_LIBRARY})
 endif()
 
-include_directories(${CASADI_INCLUDE_DIRS})
+include_directories(${CASADI_INCLUDE_DIRS} # ${OpenCV_INCLUDE_DIRS}
+)
 
 add_executable(casadi_controller_node
   src/casadi_controller_node.cpp
@@ -57,7 +59,8 @@ ament_target_dependencies(casadi_controller_node
   tf2_geometry_msgs
 )
 
-target_link_libraries(casadi_controller_node ${CASADI_LIBRARIES})
+target_link_libraries(casadi_controller_node ${CASADI_LIBRARIES} # ${OpenCV_LIBS}
+)
 
 if(CASADI_CFLAGS_OTHER)
   target_compile_options(casadi_controller_node PRIVATE ${CASADI_CFLAGS_OTHER})
@@ -70,36 +73,13 @@ install(TARGETS casadi_controller_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# Real-world MPC node
-add_executable(realworld_mpc
-  src/realworld_mpc.cpp
-)
-
-ament_target_dependencies(realworld_mpc
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
-)
-
-target_link_libraries(realworld_mpc ${CASADI_LIBRARIES})
-
-if(CASADI_CFLAGS_OTHER)
-  target_compile_options(realworld_mpc PRIVATE ${CASADI_CFLAGS_OTHER})
-endif()
-if(CASADI_LDFLAGS_OTHER)
-  target_link_options(realworld_mpc PRIVATE ${CASADI_LDFLAGS_OTHER})
-endif()
-
-install(TARGETS realworld_mpc
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 install(DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config
+)
+
+# Install launch files
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
 )
 
 ament_package()

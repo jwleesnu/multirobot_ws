@@ -38,16 +38,14 @@ private:
     path_msg.header.stamp = this->now();
     path_msg.header.frame_id = "odom";  // adjust frame as needed
 
-    // Straight line reference: x = 0.5 * t, y = 1.0, yaw = 0
-    const double vx = 0.5;     // m/s
-    const double y_const = 1.0;
-
     path_msg.poses.reserve(steps);
     for (int k = 0; k < steps; ++k) {
+
       const double tk = t0 + k * dt;
-      const double x = vx * tk;
-      const double y = y_const;
-      const double yaw = 0.0;
+      // Inline parametric trajectory (edit here)
+      const double x = 2.5;
+      const double y = -1.5 + 0.5 * tk;
+      const double yaw = +90.0 * (pi / 180.0);
 
       geometry_msgs::msg::PoseStamped ps;
       ps.header.stamp = path_msg.header.stamp;
