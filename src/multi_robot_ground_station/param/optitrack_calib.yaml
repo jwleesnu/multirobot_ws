@@ -1,0 +1,42 @@
+optitrack_calib_node:
+  ros__parameters:
+    publish_tf: true
+    tf_prefix: ""
+    tf_rate: 100.0
+    num_robot: 2
+    world_frame_id: "world"
+    # prefix for optitrack topics
+    optitrack_pose_prefix: "optitrack/"
+    encoder_topic_name: "towing_angle"
+    
+    object_frame_id: "object"
+    # save the transformation from optitrack frame to object frame
+    object_T_vo : [0.999936345718080, -0.010418066702264, 0.004332250934586, -0.290821178035559,
+                   0.010422417153964, 0.999945202122002, -0.000982839690657, 0.058524863400903,
+                  -0.004321774246973, 0.001027929655158, 0.999990132765310, -0.865848869937280]
+
+    robot_1_frame_id: "robot_1"
+    robot_1_fix_status: "out" # "in" or "out" 침대 고정 위치 여부
+    # save the transformation from optitrack frame to robot_i frame
+    robot_1_T_r1t_r1 : [1.0, 0.0, 0.0, -0.290821178035559,
+                        0.0, 1.0, 0.0, 0.058524863400903,
+                        0.0, 0.0, 1.0, -0.865848869937280]
+    
+    robot_1_T_r1h_r1 : [1.0, 0.0, 0.0, -0.290821178035559,
+                        0.0, 1.0, 0.0, 0.058524863400903,
+                        0.0, 0.0, 1.0, -0.865848869937280]
+    
+    robot_2_frame_id: "robot_2"
+    robot_2_fix_status: "out"
+    robot_2_T_r2t_r2 : [1.0, 0.0, 0.0, -0.290821178035559,
+                        0.0, 1.0, 0.0, 0.058524863400903,
+                        0.0, 0.0, 1.0, -0.865848869937280]
+
+    robot_2_T_r2h_r2 : [1.0, 0.0, 0.0, -0.290821178035559,
+                        0.0, 1.0, 0.0, 0.058524863400903,
+                        0.0, 0.0, 1.0, -0.865848869937280]
+
+    
+    
+
+

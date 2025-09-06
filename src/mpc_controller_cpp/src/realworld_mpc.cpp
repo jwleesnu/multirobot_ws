@@ -489,23 +489,20 @@ private:
       return;
     }
 
-    // 2) Require initial towing angles for all robots before starting MPC
-    for (int i = 0; i < params_sys_n_rbt_; ++i) {
-      if (!has_towing_angle_[i]) {
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *(this->get_clock()), 1000,
-          "Waiting for towing angles: missing robot_%d/towing_angle", i+1);
-        return;
-      }
-    }
-
-    // 3) Robot headings from towing_angle (global yaw = cart yaw + relative angle in rad)
-    {
+    // 2) Robot headings from TF (world -> robot_i)
+    try {
       std::vector<double> thR_list(params_sys_n_rbt_, 0.0);
-      const double deg2rad = 0.017453292519943295; // pi/180
       for (int i = 0; i < params_sys_n_rbt_; ++i) {
-        thR_list[i] = thB_ + towing_deg_[i] * deg2rad;
+        std::string robot_frame = "robot_" + std::to_string(i+1);
+        auto [rx, ry, yaw_i] = lookup_pose_yaw(robot_frame, "world");
+        (void)rx; (void)ry;
+        thR_list[i] = yaw_i;
       }
       thR_ = thR_list;
+    } catch (...) {
+      RCLCPP_INFO_THROTTLE(this->get_logger(), *(this->get_clock()), 1000,
+        "Waiting for TFs (world->robot_i)...");
+      return;
     }
 
     const int N = nlp_N_;

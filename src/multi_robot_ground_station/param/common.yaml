@@ -1,0 +1,13 @@
+/**:
+  ros__parameters:
+    num_robot: 2
+    use_prior_map: true
+    object_frame_id: "object"
+    robot_1_frame_id: "robot_1"
+    robot_0_frame_id: "robot_0"
+      
+global_mapper_node:
+  ros__parameters:
+    global_map_timer_period: 0.5
+    pose_timer_period: 0.1
+    map_path: "/home/seungwoolaptop22/multi_robot_proj_ws/src/ground_station/map/hospital_map.yaml"
